@@ -41,6 +41,23 @@ Consider the errors in the kinematic model, the new state is [x, y, psi, v, cte,
 `v_t/Lf * delta * dt` is  the change in error caused by the vehicle's movement.
 
 
+- Predict future state
+
+predict future state based on kinematic model to cope with actuator latency.
+`x, y, psi` state are zeros because the transformed vehicle coordinate.
+
+```
+// predict state after 100ms           
+const double Lf = 2.67;
+const double dt = 0.1;
+double pred_x = 0 + v * cos(epsi) * dt;
+double pred_y = 0 + v * sin(epsi) * dt;
+double pred_psi = 0 + v * delta / Lf * dt;
+double pred_v = v + acc * dt;
+double pred_cte = cte + v * sin(epsi) * dt;
+double pred_epsi = epsi + v / Lf * delta * dt;
+```
+
 
 ### Dependencies
 
