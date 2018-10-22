@@ -8,7 +8,17 @@ I implemented a MPC  controller in c++ in this project.
 
 ![](img/example.png)
 
+
+
 ### Introduction
+
+Steps:
+
+1. Set N and dt.
+2. Fit the polynomial to the waypoints.
+3. Calculate initial cross track error and orientation error values.
+4. Define the components of the cost function (state, actuators, etc).
+5. Define the model constraints. These are the state update equations defined in the Vehicle Models module.
 
 Kinematic model is used in MPC. 
 
@@ -40,10 +50,29 @@ Consider the errors in the kinematic model, the new state is [x, y, psi, v, cte,
 
 `v_t/Lf * delta * dt` is  the change in error caused by the vehicle's movement.
 
+- Polynomial Fitting
 
-- Predict future state
+Due to the coordinate difference between vehicle state and waypoint position, we need to convert  waypoints to vehicle coordinate from map coordinate for convenience of polynomial fitting. We calculate the relative position between vehicle and waypoints first, and then rotate `psi` in  counter clockwise direction. Then fitting the 3rd polynomial curve use the new positions of waypoints.
 
-predict future state based on kinematic model to cope with actuator latency.
+```
+for(size_t i=0; i<ptsx.size(); ++i){
+  // relative position to the vehicle
+  double x = ptsx[i] - px;
+  double y = ptsy[i] - py;
+  //transform from map coordinate to vehicle coordinate
+  ptsx_r[i] = x*cos(psi) - y*sin(psi);
+  ptsy_r[i] = x*sin(psi) + y*cos(psi);
+}
+```
+
+- Actuation Latency
+
+The actuation command won't execute instantly in real car,  there will be a delay as the command propagates through the system. A 100ms latency is added in the simulator to simulate this condition.
+If the controllers  calculate the error with respect to the present state, but the actuation will be performed when the vehicle is in a future state. This can sometimes lead to instability problem. 
+
+This could easily be modeled by a simple dynamic system and incorporated into the vehicle model. One approach would be running a simulation using the vehicle model starting from the current state for the duration of the latency. The resulting state from the simulation is the new initial state for MPC.
+
+To cope with actuator latency, I add a step to predict future state based on vehicle kinematic model, The resulting state from the simulation is the new initial state for MPC.
 `x, y, psi` state are zeros because the transformed vehicle coordinate.
 
 ```
@@ -57,6 +86,15 @@ double pred_v = v + acc * dt;
 double pred_cte = cte + v * sin(epsi) * dt;
 double pred_epsi = epsi + v / Lf * delta * dt;
 ```
+
+- Parameters setting
+
+`N = 10` and `dt = 0.1` is selected for this MPC controller.
+
+`N * dt` is the time MPC predicted, and the disired velocity is settled as 80mph (~36m/s), I think the predicted duration `1s` is enough for safety. The actuation  latency is `0.1s`, so the same value is used for `dt`, `N = 10` is obtained in the same time. 
+
+In theory, the larger`N*dt` and `N` , the better performance can be predicted. However, more computation resource is needed, which is chanllenge for real time control on self driving car. 
+
 
 
 ### Dependencies
