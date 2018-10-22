@@ -98,12 +98,15 @@ int main() {
           // transform into right hand coordinate
           delta = 0 - delta;
           psi = 0 - psi;
+          // I didn't convert velocity into m/s here because it caused unstable performance
+          // It should be converted, but it performs worse... 
+          // I am not sure about the velocity unit from simulator now, 
+          // even though it says it's mph in DATA.md...
           // mph to m/s
           // v = v * 0.44704;
           
           Eigen::VectorXd ptsx_r(ptsx.size());
           Eigen::VectorXd ptsy_r(ptsy.size());
-
           for(size_t i=0; i<ptsx.size(); ++i){
             // relative position to the vehicle
             double x = ptsx[i] - px;
@@ -115,16 +118,12 @@ int main() {
 
           // cte = f(x) - y, epsi = psi - f'(x) 
           auto coeffs = polyfit(ptsx_r, ptsy_r, 3);
+          double cte = polyeval(coeffs, 0) - 0; 
+          double epsi = 0 - atan(coeffs[1]);
 
-          double cte = polyeval(coeffs, 0) - 0; // f(x)-y
-
-          // double epsi = psi - atan(coeffs[1]+2*coeffs[2]*px+3*coeffs[3]*px*px);
-          double epsi = 0 - atan(coeffs[1]); //psi - psides
-
+          // predict state after 100ms           
           const double Lf = 2.67;
-
-          // predict state after 100ms
-          const double dt = 0.1; 
+          const double dt = 0.1;
           double pred_x = 0 + v * cos(epsi) * dt;
           double pred_y = 0 + v * sin(epsi) * dt;
           double pred_psi = 0 + v * delta / Lf * dt;
@@ -133,7 +132,6 @@ int main() {
           double pred_epsi = epsi + v / Lf * delta * dt;
 
           Eigen::VectorXd state(6);
-
           state << pred_x, pred_y, pred_psi, pred_v, pred_cte, pred_epsi;
 
           auto vars = mpc.Solve(state, coeffs);
