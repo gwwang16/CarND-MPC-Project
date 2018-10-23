@@ -126,7 +126,7 @@ int main() {
           const double dt = 0.1;
           double pred_x = 0 + v * cos(epsi) * dt;
           double pred_y = 0 + v * sin(epsi) * dt;
-          double pred_psi = 0 + v * delta / Lf * dt;
+          double pred_psi = 0 + v / Lf * delta * dt;
           double pred_v = v + acc * dt;
           double pred_cte = cte + v * sin(epsi) * dt;
           double pred_epsi = epsi + v / Lf * delta * dt;
@@ -181,6 +181,7 @@ int main() {
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
           this_thread::sleep_for(chrono::milliseconds(100));
+          // std::chrono::system_clock::now()
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

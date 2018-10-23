@@ -22,7 +22,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 //reference speed
-const double ref_v = 80;
+const double ref_v = 160;
 
 // variables starting index
 size_t x_start = 0;
@@ -51,21 +51,21 @@ public:
 
     // Reference State Cost
     for (size_t t = 0; t < N; ++t) {
-      fg[0] += 200 * CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += 200 * CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += 600 * CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 600 * CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += 0.1 * CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize state changing rate
     for (size_t t = 0; t < N - 2; ++t) {
-      fg[0] += 2 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += 10 * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
     // Minimize action
     for (size_t t = 0; t < N - 1; ++t) {
-      fg[0] += 2 * CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += 0.1 * CppAD::pow(vars[a_start + t], 2);
+      fg[0] += 10 * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += CppAD::pow(vars[a_start + t], 2);
     }
 
     // Setup Model Constraints
